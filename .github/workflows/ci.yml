@@ -58,3 +58,23 @@ jobs:
 
       - name: Run tests
         run: uv run pytest
+
+  deploy:
+    # Only after tests pass, and only for pushes to main (never for pull requests).
+    needs: backend
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # If two pushes land close together, deploy them one at a time, in order.
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: superfly/flyctl-actions/setup-flyctl@1.5
+
+      # Fly builds the image, runs the migration release_command, then swaps machines.
+      - name: Deploy to Fly.io
+        run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

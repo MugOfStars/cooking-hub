@@ -1,5 +1,5 @@
-# Fly.io deployment config. Secrets (DATABASE_URL) are set with `fly secrets set`,
-# never in this file.
+# Fly.io deployment config. Secrets (DATABASE_URL, AUTH_PASSWORD_HASH, SESSION_SECRET)
+# are set with `fly secrets set`, never in this file.
 app = "chef-gavin"
 primary_region = "iad"  # Ashburn, VA: next to the Neon database in AWS us-east-1
 

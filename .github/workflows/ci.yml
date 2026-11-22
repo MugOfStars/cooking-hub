@@ -30,6 +30,8 @@ jobs:
 
     env:
       DATABASE_URL: postgresql+psycopg://ci:ci@localhost:5432/cooking_hub_test
+      # Migrations don't need auth secrets. The tests set their own (tests/conftest.py).
+      AUTH_ENABLED: "false"
 
     steps:
       - uses: actions/checkout@v5

@@ -5,10 +5,12 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from app.auth import setup_auth
 from app.db import get_db
 from app.frontend import FRONTEND_DIST, mount_frontend
 
 app = FastAPI(title="Cooking Hub API")
+setup_auth(app)
 
 
 @app.get("/api/live")

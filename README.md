@@ -48,6 +48,22 @@ browser ──► Vite dev server ──/api proxy──► FastAPI ──► Po
   the browser only ever talks to one origin.
 - **The health check touches the database.** `/api/health` runs `SELECT 1` and
   returns 503 if Postgres is unreachable, so it verifies the whole stack.
+- **Single shared password, no users table.** There is one user, so the password's
+  Argon2id hash lives in an env var (`AUTH_PASSWORD_HASH`). Argon2id is OWASP's first
+  choice: slow and memory-hard, so a leaked hash is expensive to brute-force.
+- **Stateless signed session cookie.** Logging in sets a cookie signed with
+  `SESSION_SECRET` (Starlette's `SessionMiddleware`), valid for a year and renewed on
+  use. There's no sessions table to query. The trade-off: one session can't be revoked
+  on its own, but rotating the secret logs out every device, which is enough here.
+- **Cookie flags do the security work.** `HttpOnly` keeps the cookie away from
+  JavaScript (so an XSS bug can't steal it), `Secure` limits it to HTTPS, and
+  `SameSite=Lax` keeps it off cross-site POSTs. Together with the single origin (no CORS)
+  and a JSON-only API, that covers CSRF without tokens.
+- **Deny by default.** Protected routes use the `require_auth` dependency, and a test
+  fails if any `/api` route outside a short public list (liveness, health, login) lacks it.
+- **Fail closed.** With `AUTH_ENABLED=true` (the default) the app refuses to start without
+  a valid hash and secret, so a missing secret can't leave the site open. A public demo
+  deployment opts out with `AUTH_ENABLED=false`.
 
 ## Local development
 
@@ -76,7 +92,8 @@ npm install
 npm run dev
 ```
 
-The page should show **API: ok / DB: ok**.
+Log in with the local-dev password `cooking` (set in `.env.example`). The page should
+then show **API: ok / DB: ok**.
 
 ### Common tasks
 
@@ -85,6 +102,7 @@ The page should show **API: ok / DB: ok**.
 uv run pytest                                    # tests (needs Postgres running)
 uv run ruff check . && uv run ruff format .      # lint + format
 uv run alembic revision --autogenerate -m "..."  # new migration after model changes
+uv run python -m app.hash_password               # hash a password for AUTH_PASSWORD_HASH
 
 # Database
 docker compose down       # stop Postgres (data is kept in a named volume)
@@ -101,6 +119,7 @@ compose Postgres:
 docker build -t cooking-hub .
 docker run --rm -p 8000:8000 \
   -e DATABASE_URL=postgresql+psycopg://cooking_hub:change-me-locally@host.docker.internal:5432/cooking_hub \
+  -e AUTH_ENABLED=false \
   cooking-hub
 # open http://localhost:8000
 ```

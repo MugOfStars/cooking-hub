@@ -11,7 +11,11 @@ ROOT_ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=ROOT_ENV_FILE, extra="ignore")
+    # hide_input_in_errors: a validation error would otherwise print every setting,
+    # secrets included, into the deploy log (and this repo's CI logs are public).
+    model_config = SettingsConfigDict(
+        env_file=ROOT_ENV_FILE, extra="ignore", hide_input_in_errors=True
+    )
 
     database_url: str
 

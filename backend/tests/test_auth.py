@@ -88,6 +88,18 @@ def test_settings_fail_closed_when_auth_misconfigured(overrides):
         Settings(database_url="postgresql://u:p@h/db", auth_enabled=True, **overrides)
 
 
+def test_settings_errors_do_not_echo_secrets():
+    """Deploy logs are public, so a misconfiguration must not print secret values."""
+    with pytest.raises(ValidationError) as excinfo:
+        Settings(
+            database_url="postgresql://u:db-password-SENTINEL@h/db",
+            auth_enabled=True,
+            auth_password_hash="not-a-hash-SENTINEL",
+            session_secret="session-secret-SENTINEL-long-enough-to-pass",
+        )
+    assert "SENTINEL" not in str(excinfo.value)
+
+
 def test_settings_allow_missing_secrets_when_auth_disabled():
     Settings(
         database_url="postgresql://u:p@h/db",

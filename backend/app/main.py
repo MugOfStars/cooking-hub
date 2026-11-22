@@ -6,6 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.db import get_db
+from app.frontend import FRONTEND_DIST, mount_frontend
 
 app = FastAPI(title="Cooking Hub API")
 
@@ -23,3 +24,9 @@ def health(response: Response, db: Annotated[Session, Depends(get_db)]) -> dict[
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
         return {"status": "degraded", "database": "unreachable"}
     return {"status": "ok", "database": "ok"}
+
+
+# Keep this last (see mount_frontend). In local development there's usually no build,
+# and the Vite dev server serves the frontend instead, so this is skipped.
+if FRONTEND_DIST.is_dir():
+    mount_frontend(app, FRONTEND_DIST)

@@ -91,6 +91,20 @@ docker compose down       # stop Postgres (data is kept in a named volume)
 docker compose down -v    # stop and delete all local data
 ```
 
+### Production image
+
+In production, one container serves both the API and the built React app, so the
+browser still talks to a single origin. To build and run it locally against the
+compose Postgres:
+
+```bash
+docker build -t cooking-hub .
+docker run --rm -p 8000:8000 \
+  -e DATABASE_URL=postgresql+psycopg://cooking_hub:change-me-locally@host.docker.internal:5432/cooking_hub \
+  cooking-hub
+# open http://localhost:8000
+```
+
 ## Project layout
 
 ```

@@ -11,6 +11,13 @@ from app.frontend import FRONTEND_DIST, mount_frontend
 app = FastAPI(title="Cooking Hub API")
 
 
+@app.get("/api/live")
+def live() -> dict[str, str]:
+    """Liveness: is the process up? Deliberately doesn't touch the database, so the
+    host's frequent health checks don't keep a scale-to-zero database awake 24/7."""
+    return {"status": "ok"}
+
+
 @app.get("/api/health")
 def health(response: Response, db: Annotated[Session, Depends(get_db)]) -> dict[str, str]:
     """Report whether the API is up and can reach the database.

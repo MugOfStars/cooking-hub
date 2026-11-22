@@ -14,6 +14,18 @@ def test_health_ok_when_database_reachable():
     assert response.json() == {"status": "ok", "database": "ok"}
 
 
+def test_live_does_not_touch_database():
+    # If /api/live used the database, this override would make it fail.
+    app.dependency_overrides[get_db] = lambda: _BrokenSession()
+    try:
+        response = client.get("/api/live")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
 class _BrokenSession:
     def execute(self, *args, **kwargs):
         raise OperationalError("SELECT 1", {}, Exception("connection refused"))
